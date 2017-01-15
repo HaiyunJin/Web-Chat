@@ -1,39 +1,90 @@
 <!doctype html>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, height=device-heigth" >
 <html>
   <head>
-    <title>Socket.IO chat</title>
+    <title id="title">Socket.IO chat</title>
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
-      body { font: 13px Helvetica, Arial; }
-      form { background: #000; padding: 3px; position: fixed; bottom: 0; width: 100%; }
-      form input { border: 0; padding: 10px; width: 90%; margin-right: .5%; }
-      form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 10px; }
+      body { font: 15px Helvetica, Arial;}
+      form.inmsg { background: #000; padding: 3px; position: fixed; bottom: 0; width: 100%;}
+      form.inmsg input { border: 0; padding: 10px; width: 90%; margin-right: .5%; }
+      form.inmsg button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 10px; }
+      form.msgbox { background: #fff; padding: 3px; position:relative ; bottom: 0; width: 100%;overflow:auto;}
       #messages { list-style-type: none; margin: 0; padding: 0; }
       #messages li { padding: 5px 10px; }
       #messages li:nth-child(odd) { background: #eee; }
     </style>
   </head>
   <body>
-    <ul id="messages"></ul>
-    <form action="">
+
+    <form class="msgbox">
+      <div id="" style="overflow-y: scroll;"; height=50%>
+        <ul id="messages"></ul>
+      </div>
+      <div id="spacer">  <p><br><br><br></p> </div>
+    </form>
+    <form action="" class="inmsg">
       <input id="m" autocomplete="off" /><button>Send</button>
     </form>
+
 <script src="/socket.io/socket.io.js"></script>
 <script src="http://code.jquery.com/jquery-1.11.1.js"></script>
 <script>
-  var socket = io();
-  $('form').submit(function(){
-    socket.emit('chat message', $('#m').val());
-    $('#m').val('');
-    return false;
-  });
+    var socket = io();
+    var name='null';
+    var get_name = function(){
+        name = prompt("What is your name?");
+        if ( !name || name == 'null') {
+            get_name();
+        } else {
+            $('#name').val(name);
+           socket.emit('join',name);
+           document.title = name;
+    }
+    };
+    var inputobj = document.getElementById('m');
+    inputobj.onkeydown = function() {
+        socket.emit('typing',name);
+    };
+    inputobj.onkeyup = function() {
+        socket.emit('nottyping',' ');
+    };
+    var appendMsg = function(msg) {
+       $('#messages').append($('<li>').text(msg));
+       spacer.scrollIntoView();
+    };
 
+// alert("name");
+    get_name();
+ 
+    $('form').submit(function(){
+        socket.emit('chat message', {name:name,msg:$('#m').val()});
+        $('#m').val('');
+        return false;
+    });
 
-  socket.on('chat message', function(msg){
-    $('#messages').append($('<li>').text(msg));
-  });
+   socket.on('join', function(msg){
+//    alert(msg);
+      appendMsg(msg);
+   });
+   socket.on('typing', function(other){
+     if (  name != other ) {
+        document.title = other + " is typing";
+    }
+   });
+
+   socket.on('nottyping', function(arg){
+    document.title = name;
+   });
+ 
+   socket.on('chat message', function(msg){
+    appendMsg(msg.name+": "+msg.msg);
+   });
+
+   socket.on('disconnect', function(msg){
+    appendMsg(msg);
+   });
 </script>
-
 
   </body>
 </html>

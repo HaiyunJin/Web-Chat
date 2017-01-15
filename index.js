@@ -13,14 +13,26 @@ app.get('/', function(req, res){
 
 
 io.on('connection', function(socket){
-//  console.log('a user connected');
+    var myname;
+    socket.on('join', function(name){ 
+        myname = name;
+        io.emit('join',name+" has joined.");
+        console.log(name+" has joined.");
+    });
+    socket.on('typing', function(name){
+      io.emit('typing', name);
+    });
+    socket.on('nottyping', function(arg){
+      io.emit('nottyping',arg);
+    });
     socket.on('chat message', function(msg){
-   // console.log('message: ' + msg);
-    io.emit('chat message', msg);
-  });
-  socket.on('disconnect', function(){
-    console.log('user disconnected');
-  });
+      console.log(msg.name+': ' + msg.msg);
+      io.emit('chat message', msg);
+    });
+    socket.on('disconnect', function(){
+        io.emit('disconnect',myname+" left.");
+        console.log('user '+myname+' disconnected');
+    });
 });
 
 
